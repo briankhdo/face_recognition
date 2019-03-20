@@ -13,8 +13,11 @@ RUN apt-get install -y build-essential cmake pkg-config \
 
 RUN apt-get install -y wget vim python3-tk python3-pip
 
-RUN apt-get install git
+RUN apt-get install -y dogit
 
 RUN cd /root/ && git clone https://github.com/briankhdo/face_recognition.git
+
+RUN pip install --upgrade pip
+RUN pip3 install -r requirements.txt
 
 CMD ["python3 /root/face_recognition/app.py"]
