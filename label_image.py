@@ -127,16 +127,12 @@ if __name__ == "__main__":
   output_name = "import/" + output_layer
   input_operation = graph.get_operation_by_name(input_name)
   output_operation = graph.get_operation_by_name(output_name)
-  start_time = time.time()
   with tf.Session(graph=graph) as sess:
     results = sess.run(output_operation.outputs[0], {
         input_operation.outputs[0]: t
     })
   results = np.squeeze(results)
-  end_time = time.time()
-  delta = end_time - start_time
   top_k = results.argsort()[-5:][::-1]
   labels = load_labels(label_file)
   for i in top_k:
     print(labels[i], results[i])
-  print("Took %.2fs" % delta)
