@@ -12,6 +12,12 @@ import tensorflow as tf
 import os, sys, time
 import json
 
+import cv2
+
+from align_dlib import AlignDlib
+
+align_dlib = AlignDlib(os.path.join(os.path.dirname(__file__), 'shape_predictor_68_face_landmarks.dat'))
+
 config = tf.ConfigProto()
 # config.gpu_options.allow_growth = True
 # config.gpu_options.per_process_gpu_memory_fraction = 1
@@ -98,8 +104,25 @@ output_name = "import/final_result"
 input_operation = graph.get_operation_by_name(input_name)
 output_operation = graph.get_operation_by_name(output_name)
 
+def detect_faces(image):
+    crop_dim = input_height
+    open_cv_image = np.array(image)
+    '''Plots the object detection result for a given image.'''
+    bbes = align_dlib.getFaceBoundingBoxes(open_cv_image)
+
+    aligned_images = []
+    if bbes is not None:
+        for bb in bbes:
+            aligned = align_dlib.align(crop_dim, open_cv_image, bb, landmarkIndices=AlignDlib.INNER_EYES_AND_BOTTOM_LIP)
+            if aligned is not None:
+                aligned = cv2.cvtColor(aligned, cv2.COLOR_BGR2RGB)
+                image_data = cv2.imencode('.jpg', aligned)[1].tostring()
+                aligned_images.append(image_data)
+    return aligned_images, bbes
+
 @app.route('/', methods=["POST"])
 def recognize():
+    start_time = time.time()
     file = request.files['image']
     if file:
         data = file.read()
@@ -110,24 +133,39 @@ def recognize():
             image.save(output, format="JPEG")
             contents = output.getvalue()
 
-            image = read_tensor_from_image_data(
-                contents,
-                input_height=input_height,
-                input_width=input_width,
-                input_mean=input_mean,
-                input_std=input_std)
-            with tf.Session(graph=graph) as sess:
-                results = sess.run(output_operation.outputs[0], {
-                    input_operation.outputs[0]: image
-                })
-                results = np.squeeze(results)
-                top_k = results.argsort()[-5:][::-1]
-                labels = load_labels(label_file)
-                classify_result = {}
-                for i in top_k:
-                   classify_result[labels[i]] = float(results[i])
+            faces, bboxes = detect_faces(image)
 
-                return json.dumps(classify_result)
+            print("Found %i faces" % len(faces))
+
+            recognize_results = []
+
+            for index, face in enumerate(faces):
+                image = read_tensor_from_image_data(
+                    face,
+                    input_height=input_height,
+                    input_width=input_width,
+                    input_mean=input_mean,
+                    input_std=input_std)
+                with tf.Session(graph=graph) as sess:
+                    results = sess.run(output_operation.outputs[0], {
+                        input_operation.outputs[0]: image
+                    })
+                    results = np.squeeze(results)
+                    top_k = results.argsort()[-1:][::-1]
+                    labels = load_labels(label_file)
+                    classify_result = {}
+                    for i in top_k:
+                       classify_result[labels[i]] = float(results[i])
+                    box = bboxes[index]
+                    recognize_results.append({
+                            "box": [box.left(), box.top(), box.right(), box.bottom() ],
+                            "face": classify_result
+                        })
+            took = time.time() - start_time
+            return jsonify({
+                    'faces': recognize_results,
+                    'took': float(took)
+                })
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=8080)
