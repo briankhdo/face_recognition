@@ -68,18 +68,19 @@ def read_tensor_from_image_data(image_data,
                                 input_width=299,
                                 input_mean=0,
                                 input_std=255):
-    input_name = "file_reader"
-    output_name = "normalized"
-    image_reader = tf.image.decode_jpeg(
-            image_data, channels=3, name="jpeg_reader")
-    float_caster = tf.cast(image_reader, tf.float32)
-    dims_expander = tf.expand_dims(float_caster, 0)
-    resized = tf.image.resize_bilinear(dims_expander, [input_height, input_width])
-    normalized = tf.divide(tf.subtract(resized, [input_mean]), [input_std])
-    sess = tf.Session()
-    result = sess.run(normalized)
+    with tf.device('/gpu:0'):
+        input_name = "file_reader"
+        output_name = "normalized"
+        image_reader = tf.image.decode_jpeg(
+                image_data, channels=3, name="jpeg_reader")
+        float_caster = tf.cast(image_reader, tf.float32)
+        dims_expander = tf.expand_dims(float_caster, 0)
+        resized = tf.image.resize_bilinear(dims_expander, [input_height, input_width])
+        normalized = tf.divide(tf.subtract(resized, [input_mean]), [input_std])
+        sess = tf.Session()
+        result = sess.run(normalized)
 
-    return result
+        return result
 
 
 def load_labels(label_file):
@@ -122,50 +123,51 @@ def detect_faces(image):
 
 @app.route('/', methods=["POST"])
 def recognize():
-    start_time = time.time()
-    file = request.files['image']
-    if file:
-        data = file.read()
-        image = Image.open(BytesIO(data))
-        # file_name = '2JoM2I2xtNDsYglO.png'
-        # image = Image.open(file_name)
-        with BytesIO() as output:
-            image.save(output, format="JPEG")
-            contents = output.getvalue()
+    with tf.device('/gpu:0'):
+        start_time = time.time()
+        file = request.files['image']
+        if file:
+            data = file.read()
+            image = Image.open(BytesIO(data))
+            # file_name = '2JoM2I2xtNDsYglO.png'
+            # image = Image.open(file_name)
+            with BytesIO() as output:
+                image.save(output, format="JPEG")
+                contents = output.getvalue()
 
-            faces, bboxes = detect_faces(image)
+                faces, bboxes = detect_faces(image)
 
-            print("Found %i faces" % len(faces))
+                print("Found %i faces" % len(faces))
 
-            recognize_results = []
+                recognize_results = []
 
-            for index, face in enumerate(faces):
-                image = read_tensor_from_image_data(
-                    face,
-                    input_height=input_height,
-                    input_width=input_width,
-                    input_mean=input_mean,
-                    input_std=input_std)
-                with tf.Session(graph=graph) as sess:
-                    results = sess.run(output_operation.outputs[0], {
-                        input_operation.outputs[0]: image
-                    })
-                    results = np.squeeze(results)
-                    top_k = results.argsort()[-1:][::-1]
-                    labels = load_labels(label_file)
-                    classify_result = {}
-                    for i in top_k:
-                       classify_result[labels[i]] = float(results[i])
-                    box = bboxes[index]
-                    recognize_results.append({
-                            "box": [box.left(), box.top(), box.right(), box.bottom() ],
-                            "face": classify_result
+                for index, face in enumerate(faces):
+                    image = read_tensor_from_image_data(
+                        face,
+                        input_height=input_height,
+                        input_width=input_width,
+                        input_mean=input_mean,
+                        input_std=input_std)
+                    with tf.Session(graph=graph) as sess:
+                        results = sess.run(output_operation.outputs[0], {
+                            input_operation.outputs[0]: image
                         })
-            took = time.time() - start_time
-            return jsonify({
-                    'faces': recognize_results,
-                    'took': float(took)
-                })
+                        results = np.squeeze(results)
+                        top_k = results.argsort()[-1:][::-1]
+                        labels = load_labels(label_file)
+                        classify_result = {}
+                        for i in top_k:
+                           classify_result[labels[i]] = float(results[i])
+                        box = bboxes[index]
+                        recognize_results.append({
+                                "box": [box.left(), box.top(), box.right(), box.bottom() ],
+                                "face": classify_result
+                            })
+                took = time.time() - start_time
+                return jsonify({
+                        'faces': recognize_results,
+                        'took': float(took)
+                    })
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=8080)
