@@ -18,6 +18,7 @@ RUN apt-get install -y git
 RUN cd /root/ && git clone https://github.com/briankhdo/face_recognition.git
 
 RUN pip install --upgrade pip
+RUN cd /root/face_recognition/
 RUN pip3 install -r requirements.txt
 
-CMD ["python3 /root/face_recognition/app.py"]
+CMD ["python3 /root/face_recognition/app.py >> flask_log.log &"]
