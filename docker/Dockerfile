@@ -64,6 +64,7 @@ RUN cd dlib-19.4 \
 
 RUN pip install --upgrade pip
 RUN cd /root/face_recognition/
+RUN pip install --upgrade pip
 RUN pip3 install -r /root/face_recognition/requirements.txt
 
 CMD ["cd /root/face_recognition/ && python3 /root/face_recognition/app.py >> flask_log.log &"]
