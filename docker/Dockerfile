@@ -67,4 +67,6 @@ RUN pip3 install -r /root/face_recognition/requirements.txt
 
 RUN cd /root/ && git clone https://github.com/briankhdo/face_recognition.git
 
-CMD ["cd /root/face_recognition/ && python3 /root/face_recognition/app.py >> flask_log.log &"]
+RUN cd /root/face_recognition && git pull
+
+CMD ["cd /root/face_recognition/ && python3 /root/face_recognition/app.py"]

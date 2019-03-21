@@ -89,8 +89,8 @@ def load_labels(label_file):
         label.append(l.rstrip())
     return label
 
-model_file = "./tf_files/output_graph.pb"
-label_file = "./tf_files/output_labels.txt"
+model_file = "/root/face_recognition/tf_files/output_graph.pb"
+label_file = "/root/face_recognition/tf_files/output_labels.txt"
 input_mean = 0
 input_std = 255
 
