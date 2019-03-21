@@ -15,8 +15,6 @@ RUN apt-get install -y wget vim python3-tk python3-pip
 
 RUN apt-get install -y git
 
-RUN cd /root/ && git clone https://github.com/briankhdo/face_recognition.git
-
 WORKDIR /
 RUN wget -O opencv.zip https://github.com/Itseez/opencv/archive/3.2.0.zip \
     && unzip opencv.zip \
@@ -66,5 +64,7 @@ RUN pip install --upgrade pip
 RUN cd /root/face_recognition/
 RUN pip install --upgrade pip
 RUN pip3 install -r /root/face_recognition/requirements.txt
+
+RUN cd /root/ && git clone https://github.com/briankhdo/face_recognition.git
 
 CMD ["cd /root/face_recognition/ && python3 /root/face_recognition/app.py >> flask_log.log &"]
