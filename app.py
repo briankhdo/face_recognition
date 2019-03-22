@@ -35,6 +35,20 @@ def load_graph(model_file):
 
     return graph
 
+model_file = "/root/face_recognition/tf_files/output_graph.pb"
+label_file = "/root/face_recognition/tf_files/output_labels.txt"
+input_mean = 0
+input_std = 255
+
+input_height = 224
+input_width = 224
+
+graph = load_graph(model_file)
+detection_sess = None
+with graph.as_default():
+    with tf.Session(config=config,graph=graph) as sess:
+        detection_sess = sess
+
 def read_tensor_from_image_file(file_name,
                                 input_height=299,
                                 input_width=299,
@@ -58,8 +72,7 @@ def read_tensor_from_image_file(file_name,
     dims_expander = tf.expand_dims(float_caster, 0)
     resized = tf.image.resize_bilinear(dims_expander, [input_height, input_width])
     normalized = tf.divide(tf.subtract(resized, [input_mean]), [input_std])
-    sess = tf.Session()
-    result = sess.run(normalized)
+    result = detection_sess.run(normalized)
 
     return result
 
@@ -89,20 +102,6 @@ def load_labels(label_file):
         label.append(l.rstrip())
     return label
 
-model_file = "/root/face_recognition/tf_files/output_graph.pb"
-label_file = "/root/face_recognition/tf_files/output_labels.txt"
-input_mean = 0
-input_std = 255
-
-input_height = 224
-input_width = 224
-
-graph = load_graph(model_file)
-detection_sess = None
-with graph.as_default():
-    with tf.Session(config=config,graph=graph) as sess:
-        detection_sess = sess
-
 input_name = "import/Placeholder"
 output_name = "import/final_result"
 input_operation = graph.get_operation_by_name(input_name)
@@ -123,6 +122,8 @@ def detect_faces(image):
                 image_data = cv2.imencode('.jpg', aligned)[1].tostring()
                 aligned_images.append(image_data)
     return aligned_images, bbes
+
+print("Application loaded")
 
 @app.route('/', methods=["POST"])
 def recognize():
