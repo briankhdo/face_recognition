@@ -21,7 +21,6 @@ align_dlib = AlignDlib(os.path.join(os.path.dirname(__file__), 'shape_predictor_
 config = tf.ConfigProto()
 config.gpu_options.allow_growth = True
 config.gpu_options.per_process_gpu_memory_fraction = 1
-tf.enable_eager_execution();
 
 app = Flask(__name__)
 
