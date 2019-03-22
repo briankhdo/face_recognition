@@ -24,17 +24,6 @@ config.gpu_options.per_process_gpu_memory_fraction = 1
 
 app = Flask(__name__)
 
-def load_graph(model_file):
-    graph = tf.Graph()
-    graph_def = tf.GraphDef()
-
-    with open(model_file, "rb") as f:
-        graph_def.ParseFromString(f.read())
-    with graph.as_default():
-        tf.import_graph_def(graph_def)
-
-    return graph
-
 model_file = "/root/face_recognition/tf_files/output_graph.pb"
 label_file = "/root/face_recognition/tf_files/output_labels.txt"
 input_mean = 0
@@ -43,13 +32,17 @@ input_std = 255
 input_height = 224
 input_width = 224
 
-graph = load_graph(model_file)
-detection_sess = None
-with graph.as_default():
-    with tf.Session(config=config,graph=graph) as sess:
-        detection_sess = sess
+classification_graph = tf.Graph()
+with classification_graph.as_default():
+    graph_def = tf.GraphDef()
+    with tf.gfile.GFile(model_file, 'rb') as fid:
+        graph_def.ParseFromString(fid.read())
+        tf.import_graph_def(graph_def)
 
-
+classification_sess = None
+with classification_graph.as_default():
+    with tf.Session(config=config,graph=classification_graph) as sess:
+        classification_sess = sess
 
 def read_tensor_from_image_file(file_name,
                                 input_height=299,
@@ -105,8 +98,8 @@ def load_labels(label_file):
 
 input_name = "import/Placeholder"
 output_name = "import/final_result"
-input_operation = graph.get_operation_by_name(input_name)
-output_operation = graph.get_operation_by_name(output_name)
+input_operation = classification_graph.get_operation_by_name(input_name)
+output_operation = classification_graph.get_operation_by_name(output_name)
 
 def detect_faces(image):
     crop_dim = input_height
@@ -169,7 +162,7 @@ def recognize():
 
             for index, face in enumerate(faces):
                 recognize_results.append(classify_face(index, bboxes, face))
-                
+
             took = time.time() - start_time
             return jsonify({
                     'faces': recognize_results,
