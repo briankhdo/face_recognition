@@ -61,8 +61,9 @@ RUN cd dlib-19.4 \
     && rm /dlib-19.4.tar.bz2
 
 RUN cd /root/ && git clone https://github.com/briankhdo/face_recognition.git
-RUN pip3 install -r /root/face_recognition/requirements.txt
 
-RUN cd /root/face_recognition && git pull
+RUN cd /root/face_recognition && git checkout gpu && git pull
+
+RUN pip3 install -r /root/face_recognition/requirements.txt
 
 CMD ["python3 /root/face_recognition/app.py"]

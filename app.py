@@ -21,6 +21,7 @@ align_dlib = AlignDlib(os.path.join(os.path.dirname(__file__), 'shape_predictor_
 config = tf.ConfigProto()
 config.gpu_options.allow_growth = True
 config.gpu_options.per_process_gpu_memory_fraction = 1
+tf.enable_eager_execution();
 
 app = Flask(__name__)
 
@@ -123,51 +124,50 @@ def detect_faces(image):
 
 @app.route('/', methods=["POST"])
 def recognize():
-    with tf.device('/gpu:0'):
-        start_time = time.time()
-        file = request.files['image']
-        if file:
-            data = file.read()
-            image = Image.open(BytesIO(data))
-            # file_name = '2JoM2I2xtNDsYglO.png'
-            # image = Image.open(file_name)
-            with BytesIO() as output:
-                image.save(output, format="JPEG")
-                contents = output.getvalue()
+    start_time = time.time()
+    file = request.files['image']
+    if file:
+        data = file.read()
+        image = Image.open(BytesIO(data))
+        # file_name = '2JoM2I2xtNDsYglO.png'
+        # image = Image.open(file_name)
+        with BytesIO() as output:
+            image.save(output, format="JPEG")
+            contents = output.getvalue()
 
-                faces, bboxes = detect_faces(image)
+            faces, bboxes = detect_faces(image)
 
-                print("Found %i faces" % len(faces))
+            print("Found %i faces" % len(faces))
 
-                recognize_results = []
+            recognize_results = []
 
-                for index, face in enumerate(faces):
-                    image = read_tensor_from_image_data(
-                        face,
-                        input_height=input_height,
-                        input_width=input_width,
-                        input_mean=input_mean,
-                        input_std=input_std)
-                    with tf.Session(graph=graph) as sess:
-                        results = sess.run(output_operation.outputs[0], {
-                            input_operation.outputs[0]: image
-                        })
-                        results = np.squeeze(results)
-                        top_k = results.argsort()[-1:][::-1]
-                        labels = load_labels(label_file)
-                        classify_result = {}
-                        for i in top_k:
-                           classify_result[labels[i]] = float(results[i])
-                        box = bboxes[index]
-                        recognize_results.append({
-                                "box": [box.left(), box.top(), box.right(), box.bottom() ],
-                                "face": classify_result
-                            })
-                took = time.time() - start_time
-                return jsonify({
-                        'faces': recognize_results,
-                        'took': float(took)
+            for index, face in enumerate(faces):
+                image = read_tensor_from_image_data(
+                    face,
+                    input_height=input_height,
+                    input_width=input_width,
+                    input_mean=input_mean,
+                    input_std=input_std)
+                with tf.Session(graph=graph) as sess:
+                    results = sess.run(output_operation.outputs[0], {
+                        input_operation.outputs[0]: image
                     })
+                    results = np.squeeze(results)
+                    top_k = results.argsort()[-1:][::-1]
+                    labels = load_labels(label_file)
+                    classify_result = {}
+                    for i in top_k:
+                       classify_result[labels[i]] = float(results[i])
+                    box = bboxes[index]
+                    recognize_results.append({
+                            "box": [box.left(), box.top(), box.right(), box.bottom() ],
+                            "face": classify_result
+                        })
+            took = time.time() - start_time
+            return jsonify({
+                    'faces': recognize_results,
+                    'took': float(took)
+                })
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=8080)
