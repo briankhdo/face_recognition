@@ -19,8 +19,8 @@ from align_dlib import AlignDlib
 align_dlib = AlignDlib(os.path.join(os.path.dirname(__file__), 'shape_predictor_68_face_landmarks.dat'))
 
 config = tf.ConfigProto()
-# config.gpu_options.allow_growth = True
-# config.gpu_options.per_process_gpu_memory_fraction = 1
+config.gpu_options.allow_growth = True
+config.gpu_options.per_process_gpu_memory_fraction = 1
 
 app = Flask(__name__)
 
