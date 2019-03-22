@@ -64,7 +64,6 @@ def read_tensor_from_image_file(file_name,
     return result
 
 def read_tensor_from_image_data(image_data, 
-                                graph,
                                 input_height=299,
                                 input_width=299,
                                 input_mean=0,
@@ -77,7 +76,7 @@ def read_tensor_from_image_data(image_data,
     dims_expander = tf.expand_dims(float_caster, 0)
     resized = tf.image.resize_bilinear(dims_expander, [input_height, input_width])
     normalized = tf.divide(tf.subtract(resized, [input_mean]), [input_std])
-    sess = tf.Session(graph=graph)
+    sess = tf.Session()
     result = sess.run(normalized)
 
     return result
@@ -99,6 +98,10 @@ input_height = 224
 input_width = 224
 
 graph = load_graph(model_file)
+detection_sess = None
+with graph.as_default():
+    with tf.Session(config=config,graph=graph) as sess:
+        detection_sess = sess
 
 input_name = "import/Placeholder"
 output_name = "import/final_result"
@@ -143,26 +146,24 @@ def recognize():
             for index, face in enumerate(faces):
                 image = read_tensor_from_image_data(
                     face,
-                    graph,
                     input_height=input_height,
                     input_width=input_width,
                     input_mean=input_mean,
                     input_std=input_std)
-                with tf.Session(graph=graph) as sess:
-                    results = sess.run(output_operation.outputs[0], {
-                        input_operation.outputs[0]: image
+                results = detection_sess.run(output_operation.outputs[0], {
+                    input_operation.outputs[0]: image
+                })
+                results = np.squeeze(results)
+                top_k = results.argsort()[-1:][::-1]
+                labels = load_labels(label_file)
+                classify_result = {}
+                for i in top_k:
+                   classify_result[labels[i]] = float(results[i])
+                box = bboxes[index]
+                recognize_results.append({
+                        "box": [box.left(), box.top(), box.right(), box.bottom() ],
+                        "face": classify_result
                     })
-                    results = np.squeeze(results)
-                    top_k = results.argsort()[-1:][::-1]
-                    labels = load_labels(label_file)
-                    classify_result = {}
-                    for i in top_k:
-                       classify_result[labels[i]] = float(results[i])
-                    box = bboxes[index]
-                    recognize_results.append({
-                            "box": [box.left(), box.top(), box.right(), box.bottom() ],
-                            "face": classify_result
-                        })
             took = time.time() - start_time
             return jsonify({
                     'faces': recognize_results,
