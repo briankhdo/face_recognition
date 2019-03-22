@@ -49,6 +49,8 @@ with graph.as_default():
     with tf.Session(config=config,graph=graph) as sess:
         detection_sess = sess
 
+
+
 def read_tensor_from_image_file(file_name,
                                 input_height=299,
                                 input_width=299,
@@ -124,6 +126,28 @@ def detect_faces(image):
 
 print("Application loaded")
 
+def classify_face(index, bboxes, face):
+    image = read_tensor_from_image_data(
+        face,
+        input_height=input_height,
+        input_width=input_width,
+        input_mean=input_mean,
+        input_std=input_std)
+    results = detection_sess.run(output_operation.outputs[0], {
+        input_operation.outputs[0]: image
+    })
+    results = np.squeeze(results)
+    top_k = results.argsort()[-1:][::-1]
+    labels = load_labels(label_file)
+    classify_result = {}
+    for i in top_k:
+       classify_result[labels[i]] = float(results[i])
+    box = bboxes[index]
+    return {
+        "box": [box.left(), box.top(), box.right(), box.bottom() ],
+        "face": classify_result
+    }
+
 @app.route('/', methods=["POST"])
 def recognize():
     start_time = time.time()
@@ -144,26 +168,8 @@ def recognize():
             recognize_results = []
 
             for index, face in enumerate(faces):
-                image = read_tensor_from_image_data(
-                    face,
-                    input_height=input_height,
-                    input_width=input_width,
-                    input_mean=input_mean,
-                    input_std=input_std)
-                results = detection_sess.run(output_operation.outputs[0], {
-                    input_operation.outputs[0]: image
-                })
-                results = np.squeeze(results)
-                top_k = results.argsort()[-1:][::-1]
-                labels = load_labels(label_file)
-                classify_result = {}
-                for i in top_k:
-                   classify_result[labels[i]] = float(results[i])
-                box = bboxes[index]
-                recognize_results.append({
-                        "box": [box.left(), box.top(), box.right(), box.bottom() ],
-                        "face": classify_result
-                    })
+                recognize_results.append(classify_face(index, bboxes, face))
+                
             took = time.time() - start_time
             return jsonify({
                     'faces': recognize_results,
