@@ -67,7 +67,7 @@ def read_tensor_from_image_file(file_name,
     dims_expander = tf.expand_dims(float_caster, 0)
     resized = tf.image.resize_bilinear(dims_expander, [input_height, input_width])
     normalized = tf.divide(tf.subtract(resized, [input_mean]), [input_std])
-    result = detection_sess.run(normalized)
+    result = classification_sess.run(normalized)
 
     return result
 
@@ -84,7 +84,7 @@ def read_tensor_from_image_data(image_data,
     dims_expander = tf.expand_dims(float_caster, 0)
     resized = tf.image.resize_bilinear(dims_expander, [input_height, input_width])
     normalized = tf.divide(tf.subtract(resized, [input_mean]), [input_std])
-    result = detection_sess.run(normalized)
+    result = classification_sess.run(normalized)
 
     return result
 
