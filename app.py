@@ -64,7 +64,8 @@ def read_tensor_from_image_file(file_name,
 
     return result
 
-def read_tensor_from_image_data(image_data,
+def read_tensor_from_image_data(image_data, 
+                                graph,
                                 input_height=299,
                                 input_width=299,
                                 input_mean=0,
@@ -77,7 +78,7 @@ def read_tensor_from_image_data(image_data,
     dims_expander = tf.expand_dims(float_caster, 0)
     resized = tf.image.resize_bilinear(dims_expander, [input_height, input_width])
     normalized = tf.divide(tf.subtract(resized, [input_mean]), [input_std])
-    sess = tf.Session()
+    sess = tf.Session(graph=graph)
     result = sess.run(normalized)
 
     return result
@@ -143,6 +144,7 @@ def recognize():
             for index, face in enumerate(faces):
                 image = read_tensor_from_image_data(
                     face,
+                    graph,
                     input_height=input_height,
                     input_width=input_width,
                     input_mean=input_mean,
