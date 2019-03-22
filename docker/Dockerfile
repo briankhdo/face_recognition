@@ -30,7 +30,7 @@ RUN cd /opencv-4.0.1/ \
             -D INSTALL_PYTHON_EXAMPLES=ON \
             -D OPENCV_EXTRA_MODULES_PATH=/opencv_contrib-4.0.1/modules \
             -D BUILD_EXAMPLES=OFF \
-            -D WITH_CUDA=ON \
+            -D WITH_CUDA=OFF \
             -D BUILD_opencv_python2=OFF \
             -D BUILD_NEW_PYTHON_SUPPORT=ON \
             -D CMAKE_INSTALL_PREFIX=$(python3 -c "import sys; print(sys.prefix)") \
