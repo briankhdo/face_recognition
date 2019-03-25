@@ -70,7 +70,6 @@ hieuht
 hieult
 hieunt86
 hieupc
-hoanglk
 hoanglm
 hoangnv
 hoangvm
@@ -159,7 +158,6 @@ phongdnt
 phonglq
 phongth
 phucnh
-phuocvq
 phuongdm90
 phuongnm
 phuongnt
