@@ -10,9 +10,7 @@ RUN apt-get install -y build-essential cmake pkg-config \
                     libatlas-base-dev gfortran \
                     libboost-all-dev \
                     python3 python3-dev python3-numpy unzip
-
 RUN apt-get install -y wget vim python3-tk python3-pip
-
 RUN apt-get install -y git
 
 WORKDIR /
@@ -63,9 +61,9 @@ RUN cd dlib-19.4 \
 RUN pip install --upgrade pip
 RUN cd /root/face_recognition/
 RUN pip install --upgrade pip
-RUN pip3 install -r /root/face_recognition/requirements.txt
 
 RUN cd /root/ && git clone https://github.com/briankhdo/face_recognition.git
+RUN pip3 install -r /root/face_recognition/requirements.txt
 
 RUN cd /root/face_recognition && git pull
 
