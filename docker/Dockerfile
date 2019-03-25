@@ -62,6 +62,7 @@ RUN pip install --upgrade pip
 RUN cd /root/ && git clone https://github.com/briankhdo/face_recognition.git
 RUN pip3 install -r /root/face_recognition/requirements.txt
 
+ARG CACHEBUST=1
 RUN cd /root/face_recognition && git pull
 
 CMD ["python3", "/root/face_recognition/app.py"]
