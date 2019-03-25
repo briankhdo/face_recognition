@@ -67,9 +67,11 @@ def read_tensor_from_image_file(file_name,
     dims_expander = tf.expand_dims(float_caster, 0)
     resized = tf.image.resize_bilinear(dims_expander, [input_height, input_width])
     normalized = tf.divide(tf.subtract(resized, [input_mean]), [input_std])
-    result = classification_sess.run(normalized)
+    with classification_graph.as_default():
+        with tf.Session(config=config,graph=classification_graph) as sess:
+            result = sess.run(normalized)
 
-    return result
+            return result
 
 def read_tensor_from_image_data(image_data, 
                                 input_height=299,
@@ -86,7 +88,10 @@ def read_tensor_from_image_data(image_data,
     normalized = tf.divide(tf.subtract(resized, [input_mean]), [input_std])
     result = classification_sess.run(normalized)
 
-    return result
+    with classification_graph.as_default():
+        with tf.Session(config=config,graph=classification_graph) as sess:
+            result = sess.run(normalized)
+            return result
 
 
 def load_labels(label_file):
@@ -126,20 +131,22 @@ def classify_face(index, bboxes, face):
         input_width=input_width,
         input_mean=input_mean,
         input_std=input_std)
-    results = detection_sess.run(output_operation.outputs[0], {
-        input_operation.outputs[0]: image
-    })
-    results = np.squeeze(results)
-    top_k = results.argsort()[-1:][::-1]
-    labels = load_labels(label_file)
-    classify_result = {}
-    for i in top_k:
-       classify_result[labels[i]] = float(results[i])
-    box = bboxes[index]
-    return {
-        "box": [box.left(), box.top(), box.right(), box.bottom() ],
-        "face": classify_result
-    }
+    with classification_graph.as_default():
+        with tf.Session(config=config,graph=classification_graph) as sess:
+            results = sess.run(output_operation.outputs[0], {
+                input_operation.outputs[0]: image
+            })
+            results = np.squeeze(results)
+            top_k = results.argsort()[-1:][::-1]
+            labels = load_labels(label_file)
+            classify_result = {}
+            for i in top_k:
+               classify_result[labels[i]] = float(results[i])
+            box = bboxes[index]
+            return {
+                "box": [box.left(), box.top(), box.right(), box.bottom() ],
+                "face": classify_result
+            }
 
 @app.route('/', methods=["POST"])
 def recognize():
