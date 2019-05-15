@@ -120,6 +120,8 @@ def detect_faces(image):
                 aligned_images.append(image_data)
     return aligned_images, bbes
 
+sess = tf.Session(graph=graph)
+
 @app.route('/', methods=["POST"])
 def recognize():
     start_time = time.time()
@@ -146,21 +148,21 @@ def recognize():
                     input_width=input_width,
                     input_mean=input_mean,
                     input_std=input_std)
-                with tf.Session(graph=graph) as sess:
-                    results = sess.run(output_operation.outputs[0], {
-                        input_operation.outputs[0]: image
+                
+                results = sess.run(output_operation.outputs[0], {
+                    input_operation.outputs[0]: image
+                })
+                results = np.squeeze(results)
+                top_k = results.argsort()[-1:][::-1]
+                labels = load_labels(label_file)
+                classify_result = {}
+                for i in top_k:
+                   classify_result[labels[i]] = float(results[i])
+                box = bboxes[index]
+                recognize_results.append({
+                        "box": [box.left(), box.top(), box.right(), box.bottom() ],
+                        "face": classify_result
                     })
-                    results = np.squeeze(results)
-                    top_k = results.argsort()[-1:][::-1]
-                    labels = load_labels(label_file)
-                    classify_result = {}
-                    for i in top_k:
-                       classify_result[labels[i]] = float(results[i])
-                    box = bboxes[index]
-                    recognize_results.append({
-                            "box": [box.left(), box.top(), box.right(), box.bottom() ],
-                            "face": classify_result
-                        })
             took = time.time() - start_time
             return jsonify({
                     'faces': recognize_results,
