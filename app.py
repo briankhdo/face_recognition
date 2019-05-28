@@ -70,8 +70,8 @@ label_file = "./tf_files/output_labels.txt"
 input_mean = 0
 input_std = 255
 
-input_height = 224
-input_width = 224
+input_height = 128
+input_width = 128
 
 graph = load_graph(model_file)
 
@@ -111,6 +111,8 @@ def recognize():
 
         data = file.read()
         image = Image.open(BytesIO(data))
+        size = 308,231
+        image.thumbnail(size, Image.ANTIALIAS)
         # file_name = '2JoM2I2xtNDsYglO.png'
         # image = Image.open(file_name)
         with BytesIO() as output:
@@ -155,6 +157,7 @@ def recognize():
             took = time.time() - start_time
             return jsonify({
                     'faces': recognize_results,
+                    'size': size,
                     'took': {
                         'face': float(face_time),
                         'recognition': float(reg_time),

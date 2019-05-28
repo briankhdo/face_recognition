@@ -7,11 +7,9 @@ anhnc
 anhnt
 anhntq
 anhpq
-anhtb
 anhttn
 anhvd
 anhvt
-bachv
 balh
 bangnh
 bangnl
@@ -29,7 +27,6 @@ dongnt
 ducnt93
 ducnv
 dungdt
-dunghm
 dunght
 dungna
 dungnh
@@ -41,7 +38,7 @@ duongbv
 duongdt
 duongnt1
 duydtp
-duynk
+duyenvlt
 duynt
 duypb
 duyvd
@@ -55,7 +52,6 @@ haivx
 hangbt
 hangbt95
 hangct
-hangnt2
 hangntd
 hangntt
 hanh
@@ -75,9 +71,7 @@ hoanglm
 hoangnv
 hoanmt
 hoanna
-hoannln
 hopnv
-huett
 hunghv
 hungnk
 hungpt
@@ -96,7 +90,6 @@ huyennd
 huyenntt
 huyenpt
 huyentt94
-huyenttt1
 huynd
 huynd91
 huynm
@@ -109,10 +102,7 @@ khanhdd
 khanhqd
 khoatv
 khoidq
-khuedb
-khueptv
 kiennt
-lanhtt
 lannm
 lienptb
 linhcm
@@ -120,7 +110,6 @@ linhdtm
 linhlb
 linhlm
 linhln
-linhng
 linhnh
 linhntk
 linhtdt
@@ -136,13 +125,9 @@ longvt
 luannb
 lynh
 lyntk
-maidtt
-maintt
 manhnv
-minhlb1
 minhln
 minhlv
-minhtnh
 muonnt
 namhh
 namnh1
@@ -151,7 +136,6 @@ ngapq
 ngocndb
 ngocnm
 ngocph
-nguyetta
 nhannt
 nhudtx
 nhungnth
@@ -159,8 +143,6 @@ nhungtt
 nhungvtt
 oanhntd
 phonglq
-phongth
-phucnh
 phucth
 phuocvq
 phuongdm90
@@ -178,7 +160,6 @@ quannm
 quyetpv
 quynhnt
 runaway518
-soncb
 sondn
 sondt
 sonnt
@@ -193,7 +174,6 @@ thangld
 thangnh
 thangnx
 thangpm
-thanhhv
 thanhnb
 thanhnt
 thanhnth
@@ -209,12 +189,9 @@ thoantk
 thunth
 thuph
 thuych
-thuydt
 thuyld
 tientm
 tinld
-toanlk
-toannh
 tramntn
 trangdt
 tranglth
@@ -228,16 +205,13 @@ trangvt
 trangvth
 trieuhv
 trinhdc
-trinhhtt
 trungpd
 truyennv
 tuanlm
 tuannm89
 tuannq
 tuannt
-tuanpa
 tuanpm1
-tuantm
 tuent
 tungds
 tunglt
@@ -249,9 +223,7 @@ viet751993
 vinhts
 vutd
 xuanda
-yenlh
 yenlt
-yennh
 yennth
 yenth
 yentt89

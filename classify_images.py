@@ -160,6 +160,7 @@ def recognize(file_name, nsess):
     took = time.time() - start_time
     return {
         'faces': recognize_results,
+        'size': size,
         'took': {
           'face': float(face_time),
           'recognition': float(reg_time),
