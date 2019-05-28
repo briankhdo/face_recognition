@@ -4,8 +4,7 @@ from io import BytesIO
 import decimal
 import flask.json
 from flask import Flask, send_file, request, jsonify, render_template, send_from_directory, redirect
-from PIL import Image
-from flask_basicauth import BasicAuth
+from PIL import Image, ImageFilter
 import requests
 import numpy as np
 import tensorflow as tf
@@ -22,6 +21,12 @@ config = tf.ConfigProto()
 # config.gpu_options.allow_growth = True
 # config.gpu_options.per_process_gpu_memory_fraction = 1
 
+requests_count = 0
+def increase_requests_count():
+    global requests_count
+    requests_count += 1
+    return requests_count
+
 app = Flask(__name__)
 
 def load_graph(model_file):
@@ -35,35 +40,7 @@ def load_graph(model_file):
 
     return graph
 
-def read_tensor_from_image_file(file_name,
-                                input_height=299,
-                                input_width=299,
-                                input_mean=0,
-                                input_std=255):
-    input_name = "file_reader"
-    output_name = "normalized"
-    file_reader = tf.read_file(file_name, input_name)
-    if file_name.endswith(".png"):
-        image_reader = tf.image.decode_png(
-                file_reader, channels=3, name="png_reader")
-    elif file_name.endswith(".gif"):
-        image_reader = tf.squeeze(
-                tf.image.decode_gif(file_reader, name="gif_reader"))
-    elif file_name.endswith(".bmp"):
-        image_reader = tf.image.decode_bmp(file_reader, name="bmp_reader")
-    else:
-        image_reader = tf.image.decode_jpeg(
-                file_reader, channels=3, name="jpeg_reader")
-    float_caster = tf.cast(image_reader, tf.float32)
-    dims_expander = tf.expand_dims(float_caster, 0)
-    resized = tf.image.resize_bilinear(dims_expander, [input_height, input_width])
-    normalized = tf.divide(tf.subtract(resized, [input_mean]), [input_std])
-    sess = tf.Session()
-    result = sess.run(normalized)
-
-    return result
-
-def read_tensor_from_image_data(image_data,
+def read_tensor_from_image_data(nsess, image_data,
                                 input_height=299,
                                 input_width=299,
                                 input_mean=0,
@@ -76,8 +53,7 @@ def read_tensor_from_image_data(image_data,
     dims_expander = tf.expand_dims(float_caster, 0)
     resized = tf.image.resize_bilinear(dims_expander, [input_height, input_width])
     normalized = tf.divide(tf.subtract(resized, [input_mean]), [input_std])
-    sess = tf.Session()
-    result = sess.run(normalized)
+    result = nsess.run(normalized)
 
     return result
 
@@ -89,8 +65,8 @@ def load_labels(label_file):
         label.append(l.rstrip())
     return label
 
-model_file = "/root/face_recognition/tf_files_50/output_graph.pb"
-label_file = "/root/face_recognition/tf_files_50/output_labels.txt"
+model_file = "./tf_files/output_graph.pb"
+label_file = "./tf_files/output_labels.txt"
 input_mean = 0
 input_std = 255
 
@@ -126,31 +102,43 @@ sess = tf.Session(graph=graph)
 def recognize():
     start_time = time.time()
     file = request.files['image']
+    nsess = tf.Session()
     if file:
+        if increase_requests_count() % 100 == 1:
+            nsess.close()
+            tf.reset_default_graph()
+            nsess = tf.Session()
+
         data = file.read()
         image = Image.open(BytesIO(data))
         # file_name = '2JoM2I2xtNDsYglO.png'
         # image = Image.open(file_name)
         with BytesIO() as output:
-            image.save(output, format="JPEG")
-            contents = output.getvalue()
+            # image = image.filter(ImageFilter.DETAIL)
+            # image = image.filter(ImageFilter.EDGE_ENHANCE)
+            # image.save('./test.jpg', format="JPEG")
 
+            from_time = time.time()
             faces, bboxes = detect_faces(image)
 
-            print("Found %i faces" % len(faces))
+            face_time = (time.time() - from_time)
+            print("Found %i faces in %ims" % (len(faces), face_time * 1000))
 
             recognize_results = []
 
+            from_time = time.time()
             for index, face in enumerate(faces):
-                image = read_tensor_from_image_data(
-                    face,
-                    input_height=input_height,
-                    input_width=input_width,
-                    input_mean=input_mean,
-                    input_std=input_std)
+
+                image_reader = tf.image.decode_jpeg(
+                        face, channels=3, name="jpeg_reader")
+                float_caster = tf.cast(image_reader, tf.float32)
+                dims_expander = tf.expand_dims(float_caster, 0)
+                resized = tf.image.resize_bilinear(dims_expander, [input_height, input_width])
+                normalized = tf.divide(tf.subtract(resized, [input_mean]), [input_std])
+                result = nsess.run(normalized)
                 
                 results = sess.run(output_operation.outputs[0], {
-                    input_operation.outputs[0]: image
+                    input_operation.outputs[0]: result
                 })
                 results = np.squeeze(results)
                 top_k = results.argsort()[-1:][::-1]
@@ -163,10 +151,15 @@ def recognize():
                         "box": [box.left(), box.top(), box.right(), box.bottom() ],
                         "face": classify_result
                     })
+            reg_time = (time.time() - from_time)
             took = time.time() - start_time
             return jsonify({
                     'faces': recognize_results,
-                    'took': float(took)
+                    'took': {
+                        'face': float(face_time),
+                        'recognition': float(reg_time),
+                        'all': float(took)
+                    }
                 })
 
 if __name__ == '__main__':
