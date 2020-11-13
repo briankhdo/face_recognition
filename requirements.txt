@@ -2,4 +2,4 @@ Flask==1.0.2
 Pillow==5.4.1
 Flask-BasicAuth==0.2.0
 requests==2.20.1
-tensorflow==1.12.0
+tensorflow==2.3.1
